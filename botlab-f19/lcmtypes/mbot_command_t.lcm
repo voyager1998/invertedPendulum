@@ -1,0 +1,24 @@
+struct mbot_command_t
+{
+    // utime is the time at which the message was generated.
+    int64_t utime;
+    
+    // Possible commanded states of the mbot.
+    const int8_t STATE_STOPPED = 0;
+    const int8_t STATE_MOVING = 1;
+    
+    int8_t is_mode_spin;
+
+    // The commanded state
+    int8_t state;
+
+    // When the commanded state is STATE_MOVING, the following stuffs
+    // are necessary for the Mbot to plan a path.
+    pose_xyt_t goal_pose;
+
+    // number of obstacles detected by the camera.
+    int32_t num_obstacles;
+    
+    // poses of the obstacles detected by the camera.
+    pose_xyt_t obstacle_poses[num_obstacles];
+}

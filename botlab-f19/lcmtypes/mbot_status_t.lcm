@@ -1,0 +1,13 @@
+struct mbot_status_t
+{
+    const int8_t STATUS_IN_PROGRESS = 0;
+    const int8_t STATUS_COMPLETE = 1;
+    const int8_t STATUS_GOAL_INVALID = 2;
+    const int8_t STATUS_NO_VALID_PATH = 3;
+
+    // utime is the time at which the message was generated.
+    int64_t utime;
+    
+    // status of the mbot.
+    int8_t status;
+}
