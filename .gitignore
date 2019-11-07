@@ -1,0 +1,13 @@
+*.a
+*.o
+*/.vscode/*
+*.jlp
+*.vscode*
+a3_code/botlab-f19/src/lcmtypes/*.hpp
+a3_code/botlab-f19/src/lcmtypes/*.py
+*.json
+.vscode/
+*/lcmtypes/*.hpp
+*test.py
+*__pycache__*
+
