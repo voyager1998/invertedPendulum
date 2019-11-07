@@ -87,11 +87,11 @@ public:
         
         mbot_motor_command_t cmd;
 
-        cmd.trans_v = 0.0f;
+        cmd.trans_v = 0.8f;
         cmd.angular_v = 0.0f;
 
         cmd.utime = now();
-        
+        return cmd;
         if(is_mode_spin_ == 1){
             // std::cout << "I'M SPINNING" << '\n';
             if (!targets_.empty() && !odomTrace_.empty()){

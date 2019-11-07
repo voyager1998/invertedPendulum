@@ -1,7 +1,8 @@
 # Only add your directories to this folder if you are 100% sure that
 # it will always compile without warnings.
 SUBDIRS = lcmtypes common imagesource vx/math vx vx/gtk slam planning apps mbot optitrack
-MBOT_SUBDIRS = lcmtypes common vx/math slam planning mbot
+# MBOT_SUBDIRS = lcmtypes common vx/math slam planning mbot
+MBOT_SUBDIRS = lcmtypes common vx/math mbot
 LAPTOP_SUBDIRS = lcmtypes common imagesource vx/math vx vx/gtk slam planning apps
 
 MAKEFLAGS += --no-print-directory

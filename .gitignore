@@ -10,4 +10,5 @@ a3_code/botlab-f19/src/lcmtypes/*.py
 */lcmtypes/*.hpp
 *test.py
 *__pycache__*
+botlab-f19/src/lcmtypes/*.*
 
