@@ -6,6 +6,8 @@
 *******************************************************************************/
 #include "mobilebot.h"
 
+#define DONT_PRINT_ODOMETRY
+
 /*******************************************************************************
 * int main() 
 *
@@ -41,10 +43,12 @@ int main(){
     // start printf_thread if running from a terminal
     // if it was started as a background process then don't bother
     //if(isatty(fileno(stdout))){
-        printf("starting print thread... \n");
-        pthread_t  printf_thread;
-        rc_pthread_create(&printf_thread, printf_loop, (void*) NULL, SCHED_OTHER, 0);
-        rc_nanosleep(1E5);
+#ifndef DONT_PRINT_ODOMETRY
+    printf("starting print thread... \n");
+    pthread_t printf_thread;
+    rc_pthread_create(&printf_thread, printf_loop, (void *)NULL, SCHED_OTHER, 0);
+    rc_nanosleep(1E5);
+#endif
     //}
 
 	// TODO: start motion capture message recieve thread
@@ -102,7 +106,9 @@ int main(){
 	rc_led_set(RC_LED_RED, LED_ON);
 	// exit cleanly
     rc_pthread_timed_join(lcm_subscribe_thread, NULL, 1.5);
+#ifndef DONT_PRINT_ODOMETRY
     rc_pthread_timed_join(printf_thread, NULL, 1.5);
+#endif
     rc_pthread_timed_join(setpoint_thread, NULL, 1.5);
     rc_led_set(RC_LED_GREEN, LED_OFF);
     rc_led_set(RC_LED_RED, LED_OFF);
@@ -196,16 +202,30 @@ void mobilebot_controller(){
     mb_update_odometry(&mb_odometry, &mb_state);
     mb_controller_update(&mb_state, &mb_setpoints);
     publish_mb_msgs();
-    
+
+    printf("cmd time: %lld\n", cmd_time);
+
     if(!mb_setpoints.manual_ctl){
-    	mb_motor_set(RIGHT_MOTOR, mb_state.right_cmd);
-   		mb_motor_set(LEFT_MOTOR, mb_state.left_cmd);
+        if (now == cmd_time) {
+            printf("reach the cmd time\n");
+            mb_motor_set(RIGHT_MOTOR, mb_state.right_cmd);
+            mb_motor_set(LEFT_MOTOR, mb_state.left_cmd);
+        } else {
+            printf("Not yet, now - cmd: %lld\n", now - cmd_time);
+        }
    	}
 
     if(mb_setpoints.manual_ctl){
-    	mb_motor_set(RIGHT_MOTOR, (mb_setpoints.fwd_velocity + mb_setpoints.turn_velocity));
-   		mb_motor_set(LEFT_MOTOR, (mb_setpoints.fwd_velocity - mb_setpoints.turn_velocity));
-   	}
+        if (now == cmd_time){
+            printf("reach the cmd time\n");
+            mb_motor_set(RIGHT_MOTOR, (mb_setpoints.fwd_velocity + mb_setpoints.turn_velocity));
+            mb_motor_set(LEFT_MOTOR, (mb_setpoints.fwd_velocity - mb_setpoints.turn_velocity));
+        }
+        else
+        {
+            printf("Not yet, now - cmd: %lld\n", now - cmd_time);
+        }
+    }
 }
 
 /*******************************************************************************
@@ -265,9 +285,8 @@ void motor_command_handler(const lcm_recv_buf_t *rbuf, const char *channel,
                           const mbot_motor_command_t *msg, void *user){
 	mb_setpoints.fwd_velocity = msg->trans_v;
 	mb_setpoints.turn_velocity = msg->angular_v;
-
+    cmd_time = msg->utime;
 }
-
 
 /*******************************************************************************
 *  reset_odometry_handler()

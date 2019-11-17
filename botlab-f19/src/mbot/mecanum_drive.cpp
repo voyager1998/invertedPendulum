@@ -22,6 +22,8 @@
 using std::cout;
 using std::endl;
 
+#define FUTURE 50000
+
 float clamp_speed(float speed)
 {
     if(speed < -1.0f)
@@ -56,7 +58,10 @@ public:
 
     mbot_motor_command_t updateCommand14(void) {
         mbot_motor_command_t cmd;
-        
+        cmd.trans_v = 0.1f;
+        cmd.angular_v = 0.0f;
+
+        cmd.utime = now() + ;
 
         return cmd;
     }

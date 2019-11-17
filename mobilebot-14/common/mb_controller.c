@@ -133,7 +133,6 @@ int mb_controller_update(mb_state_t* mb_state, mb_setpoints_t* mb_setpoints){
     if(mb_setpoints->fwd_velocity == 0){
         fwd_sp = 0;
     } 
-    
     else {
         //set point = desired fwd velocity + PID error
         fwd_sp = mb_setpoints->fwd_velocity + rc_filter_march(&fwd_vel_pid, mb_setpoints->fwd_velocity - mb_state->fwd_velocity);
