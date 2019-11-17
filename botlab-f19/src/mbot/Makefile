@@ -11,8 +11,9 @@ BIN_MOTION_CONTROLLER = $(BIN_PATH)/motion_controller
 BIN_TIMESYNC = $(BIN_PATH)/timesync
 BIN_WIFI_READER = $(BIN_PATH)/wifi_reader
 BIN_OLED_EXAMPLE = $(BIN_PATH)/oled_example
+BIN_MECANUM_DRIVE = $(BIN_PATH)/mecanum_drive
 
-ALL = $(BIN_RPLIDAR_DRIVER) $(BIN_WIFI_READER) $(BIN_TIMESYNC) $(BIN_DRIVE_SQUARE) $(BIN_MOTION_CONTROLLER) $(BIN_MC_SMOOTH) $(BIN_OLED_EXAMPLE)
+ALL = $(BIN_RPLIDAR_DRIVER) $(BIN_WIFI_READER) $(BIN_TIMESYNC) $(BIN_DRIVE_SQUARE) $(BIN_MOTION_CONTROLLER) $(BIN_MC_SMOOTH) $(BIN_OLED_EXAMPLE) $(BIN_MECANUM_DRIVE)
 
 all: $(ALL) 
 
@@ -37,6 +38,10 @@ $(BIN_WIFI_READER): wifi_reader.o $(LIBDEPS)
 	@$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BIN_OLED_EXAMPLE): oled_example.o $(LIBDEPS)
+	@echo "    $@"
+	@$(CXX) -o $@ $^ $(LDFLAGS)
+
+$(BIN_MECANUM_DRIVE): mecanum_drive.o $(LIBDEPS)
 	@echo "    $@"
 	@$(CXX) -o $@ $^ $(LDFLAGS)
 

@@ -87,7 +87,7 @@ public:
         
         mbot_motor_command_t cmd;
 
-        cmd.trans_v = 0.8f;
+        cmd.trans_v = 0.1f;
         cmd.angular_v = 0.0f;
 
         cmd.utime = now();
@@ -284,8 +284,8 @@ public:
     bool timesync_initialized(){ return timesync_initialized_; }
 
     void handleTimesync(const lcm::ReceiveBuffer* buf, const std::string& channel, const timestamp_t* timesync){
-	timesync_initialized_ = true;
-	time_offset = timesync->utime-utime_now();
+        timesync_initialized_ = true;
+        time_offset = timesync->utime - utime_now(); //negative
     }
     
     void handlePath(const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_path_t* path)
@@ -376,7 +376,7 @@ private:
     lcm::LCM * lcmInstance;
 
     int64_t now(){
-	return utime_now()+time_offset;
+	    return utime_now()+time_offset;
     }
 
     bool haveReachedTarget(void)

@@ -11,4 +11,6 @@ a3_code/botlab-f19/src/lcmtypes/*.py
 *test.py
 *__pycache__*
 botlab-f19/src/lcmtypes/*.*
-
+mobilebot-f19/bin/*
+mobilebot-f19/lcmtypes/*.c
+mobilebot-f19/lcmtypes/*.h
