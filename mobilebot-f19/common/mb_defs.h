@@ -26,8 +26,8 @@
 #endif
 #define MOT_1_POL            -1    // polarity of motor 1
 #define MOT_2_POL          1    // polarity of motor 2
-#define ENC_LEFT_POL           -1    // polarity of encoder 1
-#define ENC_RIGHT_POL          1    // polarity of encoder 2
+#define ENC_LEFT_POL           1    // polarity of encoder 1
+#define ENC_RIGHT_POL          -1    // polarity of encoder 2
 #define MOT_1_CS                0    // analog in of motor 1 current sense
 #define MOT_2_CS                1    // analog in of motor 2 current sense
 #define GEAR_RATIO              34.0  // gear ratio of motor
