@@ -61,6 +61,7 @@ void mb_update_odometry(mb_odometry_t* mb_odometry, mb_state_t* mb_state){
     mb_state -> fwd_velocity = dx / DT;
     mb_state -> left_velocity = enc2meters * mb_state->left_encoder / DT;
     mb_state -> right_velocity = enc2meters * mb_state->right_encoder / DT;
+    printf("encoder left: %f, right: %f\n", mb_state->left_velocity, mb_state->right_velocity);  
 
     //update odometry
     mb_odometry->x += dx * cos(mb_odometry->theta + dtheta/2.0f);

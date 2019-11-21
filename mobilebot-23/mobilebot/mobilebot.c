@@ -203,24 +203,24 @@ void mobilebot_controller(){
     mb_controller_update(&mb_state, &mb_setpoints);
     publish_mb_msgs();
 
-    printf("cmd time: %lld\n", cmd_time);
+    // printf("cmd time: %lld\n", cmd_time);
 
     if(!mb_setpoints.manual_ctl){
         // printf("not manual ctl\n");
-        if (now >= cmd_time) {
-            printf("slower than the cmd time: %lld\n", now - cmd_time);
-        } else {
-            printf("Not yet, now - cmd: %lld\n", now - cmd_time);
-            // update_now();
-            // while (now < cmd_time){
-            //     update_now();
-            // }
-            // printf("reach cmd time: %lld\n", now);
-            // read_mb_sensors();
-            // mb_update_odometry(&mb_odometry, &mb_state);
-            // mb_controller_update(&mb_state, &mb_setpoints);
-            // publish_mb_msgs();
-        }
+        // if (now >= cmd_time) {
+        //     printf("slower than the cmd time: %lld\n", now - cmd_time);
+        // } else {
+        //     printf("Not yet, now - cmd: %lld\n", now - cmd_time);
+        //     // update_now();
+        //     // while (now < cmd_time){
+        //     //     update_now();
+        //     // }
+        //     // printf("reach cmd time: %lld\n", now);
+        //     // read_mb_sensors();
+        //     // mb_update_odometry(&mb_odometry, &mb_state);
+        //     // mb_controller_update(&mb_state, &mb_setpoints);
+        //     // publish_mb_msgs();
+        // }
         mb_motor_set(RIGHT_MOTOR, mb_state.right_cmd);
         mb_motor_set(LEFT_MOTOR, mb_state.left_cmd);
         printf("commands: %f, %f\n", mb_state.left_cmd, mb_state.right_cmd);

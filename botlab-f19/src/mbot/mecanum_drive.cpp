@@ -24,6 +24,8 @@ using std::cout;
 using std::endl;
 
 #define FUTURE 0
+#define MAXSPEED 1.0
+// #define TESTCONSTSPEED
 
 float clamp_speed(float speed)
 {
@@ -71,9 +73,12 @@ public:
         // last_velocity = sqrt(newVx * newVx + newVy * newVy);
         Vx = Vx + deltaV * std::cos(direction);
         Vy = Vy + deltaV * std::sin(direction);
-        cout << "New velocity: " << Vx << ", " << Vy << endl;
+        // cout << "New velocity: " << Vx << ", " << Vy << endl;
 
-        cmd.trans_v = Vx - Vy;
+        cmd.trans_v = std::min(MAXSPEED, Vx - Vy);
+#ifdef TESTCONSTSPEED
+        cmd.trans_v = 0.2;
+#endif
         cmd.angular_v = 0.0;
         return cmd;
     }
@@ -81,7 +86,11 @@ public:
     mbot_motor_command_t updateCommand23(void) {
         mbot_motor_command_t cmd;
         cmd.utime = now();
-        cmd.trans_v = Vx + Vy;
+        cmd.trans_v = std::min(MAXSPEED, Vx + Vy);
+#ifdef TESTCONSTSPEED
+        cmd.trans_v = 0.0;
+#endif
+
         cmd.angular_v = 0.0;
         return cmd;
     }
@@ -136,10 +145,10 @@ int main(int argc, char** argv) {
 
     signal(SIGINT, exit);
 
-    controller.handleDrive(M_PI/2.0, 0.05);
+    controller.handleDrive(M_PI/4.0, 0.01);
 
-    double theta = 0.0;
-    int a = 0.0;
+    // double theta = 0.0;
+    // int a = 0.0;
     while (true) {
         lcmInstance.handleTimeout(10);  // update at 100Hz minimum
         // theta += 0.00001;
