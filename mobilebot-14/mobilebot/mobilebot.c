@@ -169,6 +169,21 @@ void publish_mb_msgs(){
         imu_msg.gyro[i] = mb_state.gyro[i];
     }
 
+    // if (mb_state.gyro[0] >= 1 || mb_state.gyro[0] <= -1) {
+    //     pendulumAngle = 0.999 * (pendulumAngle + mb_state.gyro[0] * (0.040152));
+    //     pendulumAngle = 0.001 * pendulumAngle + atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * 180 / 3.1415;
+    // }
+    printf("------------------------------------------\n");
+    accelerometerAngle = atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * 180 / 3.1415;
+    // printf("Accelerometers: %f\n", pendulumAngle);
+    tbAngle = mb_state.tb_angles[0] * 180 / 3.1415;
+    // printf("pendulum angle: %f\n", pendulumAngle);
+    if (abs(tbAngle) < 3){
+        printf("%f", accelerometerAngle);
+    } else {
+        printf("%f", tbAngle);
+    }
+
     odo_msg.utime = now;
     odo_msg.x = mb_odometry.x;
     odo_msg.y = mb_odometry.y;

@@ -54,6 +54,9 @@ mb_odometry_t mb_odometry;
 int64_t now;
 int64_t time_offset;
 int time_offset_initialized;
+double accelerometerAngle;
+double tbAngle;
+double pendulumAngle;
 
 // functions
 void mobilebot_controller();
