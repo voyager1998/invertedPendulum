@@ -169,15 +169,8 @@ void publish_mb_msgs(){
         imu_msg.gyro[i] = mb_state.gyro[i];
     }
 
-    // if (mb_state.gyro[0] >= 1 || mb_state.gyro[0] <= -1) {
-    //     pendulumAngle = 0.999 * (pendulumAngle + mb_state.gyro[0] * (0.040152));
-    //     pendulumAngle = 0.001 * pendulumAngle + atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * 180 / 3.1415;
-    // }
-    printf("------------------------------------------\n");
     accelerometerAngle = atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * 180 / 3.1415;
-    // printf("Accelerometers: %f\n", pendulumAngle);
     tbAngle = mb_state.tb_angles[0] * 180 / 3.1415;
-    // printf("pendulum angle: %f\n", pendulumAngle);
     if (abs(tbAngle) < 3){
         printf("pendulum angle: %f\n", accelerometerAngle);
     } else {
@@ -196,7 +189,7 @@ void publish_mb_msgs(){
     encoder_msg.rightticks = mb_state.right_encoder_total;
 
     //publish IMU & Encoder Data to LCM
-    mbot_imu_t_publish(lcm, MBOT_IMU_CHANNEL, &imu_msg);
+    mbot_imu_t_publish(lcm, PENDULUM_IMU_CHANNEL, &imu_msg);
     mbot_encoder_t_publish(lcm, MBOT_ENCODER_CHANNEL, &encoder_msg);
     odometry_t_publish(lcm, ODOMETRY_CHANNEL, &odo_msg);
 }

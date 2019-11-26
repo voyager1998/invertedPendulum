@@ -26,8 +26,8 @@
 #endif
 #define MOT_1_POL            -1    // polarity of motor 1
 #define MOT_2_POL          1    // polarity of motor 2
-#define ENC_LEFT_POL           1    // polarity of encoder 1
-#define ENC_RIGHT_POL          -1    // polarity of encoder 2
+#define ENC_LEFT_POL           -1    // polarity of encoder 1
+#define ENC_RIGHT_POL          1    // polarity of encoder 2
 #define MOT_1_CS                0    // analog in of motor 1 current sense
 #define MOT_2_CS                1    // analog in of motor 2 current sense
 #define GEAR_RATIO              34.0  // gear ratio of motor
@@ -54,7 +54,7 @@
 #define ODOMETRY_CHANNEL            "ODOMETRY"
 #define RESET_ODOMETRY_CHANNEL      "RESET_ODOMETRY"
 #define CONTROLLER_PATH_CHANNEL     "CONTROLLER_PATH"
-#define MBOT_IMU_CHANNEL            "MBOT_IMU"
+#define PENDULUM_IMU_CHANNEL        "PENDULUM_IMU"
 #define MBOT_ENCODER_CHANNEL        "MBOT_ENCODERS"
 #define MBOT_MOTOR_COMMAND_CHANNEL  "MBOT_MOTOR_COMMAND_14"
 #define MBOT_TIMESYNC_CHANNEL       "MBOT_TIMESYNC"

@@ -6,6 +6,7 @@
 #include <lcmtypes/robot_path_t.hpp>
 #include <lcmtypes/timestamp_t.hpp>
 #include <lcmtypes/message_received_t.hpp>
+#include <lcmtypes/mbot_imu_t.hpp>
 #include <common/angle_functions.hpp>
 #include <common/pose_trace.hpp>
 #include <common/lcm_config.h>
@@ -23,9 +24,20 @@
 using std::cout;
 using std::endl;
 
+#define USE_DEGREE
+
 #define FUTURE 0
 #define MAXSPEED 1.0
-// #define TESTCONSTSPEED
+#define TESTSPEED
+
+#define KP 0.9f
+#define KI 0.0f
+#define KD 0.0f
+
+#define EQUIBANGLE 89.0f
+
+#define UPDATERATE 20
+#define DT 0.05f
 
 float clamp_speed(float speed)
 {
@@ -41,11 +53,50 @@ float clamp_speed(float speed)
     return speed;
 }
 
+class pid_controller {
+public:
+    pid_controller(float p, float i, float d) {
+        set_pid(p, i, d);
+        intergral = 0.0f;
+        previous_error = 0.0f;
+        // DT = 1.0f / (float)UPDATERATE;
+        cur_error = 0.0f;
+        cur_control = 0.0f;
+    }
+
+    float update(float current_error) {
+        intergral += current_error * DT;
+        float derivative = (current_error - previous_error) / DT;
+        previous_error = current_error;
+        float control = -1.0 * (kp * current_error + ki * intergral + kd * derivative);
+        cur_error = current_error;
+        cur_control = control;
+        return control;
+    }
+
+    void set_pid(float p, float i, float d) {
+        kp = p;
+        ki = i;
+        kd = d;
+    }
+    void reset() {
+        intergral = 0.0f;
+        previous_error = 0.0f;
+    }
+
+private:
+    float intergral;
+    float previous_error;
+
+    float cur_error;
+    float cur_control;
+
+    float kp, ki, kd;
+};
+
 class MecanumDrive {
 public:
-    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance) {
-        ////////// TODO: Initialize your controller state //////////////
-
+    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid(KP, KI, KD) {
         time_offset = 0;
         timesync_initialized_ = false;
 
@@ -60,24 +111,27 @@ public:
 
         Vx = 0.0;
         Vy = 0.0;
+
+        curr_timestamp = now();
     }
 
     mbot_motor_command_t updateCommand14(void) {
         mbot_motor_command_t cmd;
+        float clamp;
         cmd.utime = now();
         float deltaV = (cmd.utime - curr_timestamp) / 1000000.0 * acceleration;
         curr_timestamp = cmd.utime;
-        // float newVx = last_velocity * std::cos(last_dir) + deltaV * std::cos(direction);
-        // float newVy = last_velocity * std::sin(last_dir) + deltaV * std::sin(direction);
-        // last_dir = atan2(newVy, newVx);
-        // last_velocity = sqrt(newVx * newVx + newVy * newVy);
         Vx = Vx + deltaV * std::cos(direction);
+        clamp = 0.5 / (std::max(0.5, abs(Vx)));
+        Vx *= clamp;
         Vy = Vy + deltaV * std::sin(direction);
-        // cout << "New velocity: " << Vx << ", " << Vy << endl;
+        clamp = 0.5 / (std::max(0.5, abs(Vy)));
+        Vy *= clamp;
+        cout << "New velocity: " << Vx << ", " << Vy << endl;
 
-        cmd.trans_v = std::min(MAXSPEED, Vx - Vy);
-#ifdef TESTCONSTSPEED
-        cmd.trans_v = 0.2;
+        cmd.trans_v = Vx - Vy;
+#ifdef TESTSPEED
+        cmd.trans_v = acceleration;
 #endif
         cmd.angular_v = 0.0;
         return cmd;
@@ -86,9 +140,9 @@ public:
     mbot_motor_command_t updateCommand23(void) {
         mbot_motor_command_t cmd;
         cmd.utime = now();
-        cmd.trans_v = std::min(MAXSPEED, Vx + Vy);
-#ifdef TESTCONSTSPEED
-        cmd.trans_v = 0.0;
+        cmd.trans_v = Vx + Vy;
+#ifdef TESTSPEED
+        cmd.trans_v = acceleration;
 #endif
 
         cmd.angular_v = 0.0;
@@ -102,16 +156,32 @@ public:
         time_offset = timesync->utime - utime_now();
     }
 
+    void handleIMU(const lcm::ReceiveBuffer* buf, const std::string& channel, const mbot_imu_t* imu_data) {
+        double accelerometerAngle = atan2f((float)imu_data->accel[1], (float)imu_data->accel[2]) * 180 / 3.1415;
+        double tbAngle = imu_data->tb_angles[0] * 180 / 3.1415;
+        if (abs(tbAngle) < 3) {
+            pendulum_theta = accelerometerAngle;
+        } else {
+            pendulum_theta = tbAngle;
+        }
+        printf("pendulum angle: %f\n", pendulum_theta);
+    }
+/*
     void handleVelocity(int64_t time, double theta, double v) {  // receive current v and dir from encoder
         curr_timestamp = time;
         last_dir = theta;
         last_velocity = v;
     }
-
-    void handleDrive(double tar_dir, double tar_acc){
-        direction = tar_dir;
-        acceleration = tar_acc;
-        curr_timestamp = now();
+*/
+    void handleDrive(/*double tar_dir, double tar_acc*/){
+        direction = 0;
+        double error = EQUIBANGLE - pendulum_theta;
+        if (abs(error)<1.0){
+            error = 0.0;
+        }
+        acceleration = pid.update(error);
+        printf("new acceleration: %f\n", acceleration);
+        // curr_timestamp = now();
     }
 
 private:
@@ -124,6 +194,11 @@ private:
     int64_t curr_timestamp;
     double last_dir;
     double last_velocity;
+
+    double pendulum_theta;  // angle between pendulum and vertical line
+    double pendulum_alpha;  // falling direction of pendulum
+
+    pid_controller pid;
 
     int64_t time_offset;
 
@@ -142,19 +217,15 @@ int main(int argc, char** argv) {
 
     MecanumDrive controller(&lcmInstance);
     lcmInstance.subscribe(MBOT_TIMESYNC_CHANNEL, &MecanumDrive::handleTimesync, &controller);
+    lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
 
     signal(SIGINT, exit);
 
-    controller.handleDrive(M_PI/4.0, 0.01);
+    // controller.handleDrive(M_PI/4.0, 0.01);
 
-    // double theta = 0.0;
-    // int a = 0.0;
     while (true) {
-        lcmInstance.handleTimeout(10);  // update at 100Hz minimum
-        // theta += 0.00001;
-        // a = (a + 1) % 2000000;
-        // controller.handleDrive(theta, ((double)a - 1000000.0) / 2000000.0);
-
+        lcmInstance.handleTimeout(UPDATERATE);
+        controller.handleDrive();
         if (controller.timesync_initialized()) {
             mbot_motor_command_t cmd14 = controller.updateCommand14();
             lcmInstance.publish(MBOT_MOTOR_COMMAND_CHANNEL_14, &cmd14);
