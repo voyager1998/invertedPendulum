@@ -21,9 +21,7 @@ On Pi:
 
 ## Send files to Beaglebone from Pi
 
-`scp -r mobilebot-f19 debian@192.168.4.2:~/`
-
-`scp -r mobilebot-f19 debian@192.168.7.2:~/`
+`scp -r mobilebot-14 debian@192.168.4.2:~/`
 
 `scp mobilebot-f19/mobilebot/mobilebot.c debian@192.168.4.2:~/mobilebot-f19/mobilebot/`
 

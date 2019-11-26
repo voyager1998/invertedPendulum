@@ -179,9 +179,9 @@ void publish_mb_msgs(){
     tbAngle = mb_state.tb_angles[0] * 180 / 3.1415;
     // printf("pendulum angle: %f\n", pendulumAngle);
     if (abs(tbAngle) < 3){
-        printf("%f", accelerometerAngle);
+        printf("pendulum angle: %f\n", accelerometerAngle);
     } else {
-        printf("%f", tbAngle);
+        printf("pendulum angle: %f\n", tbAngle);
     }
 
     odo_msg.utime = now;
