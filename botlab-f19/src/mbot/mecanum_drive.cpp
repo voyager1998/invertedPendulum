@@ -238,14 +238,14 @@ int main(int argc, char** argv) {
     lcm::LCM lcmInstance(MULTICAST_URL);
 
     MecanumDrive controller(&lcmInstance);
+    controller.loadEquibTheta();
     lcmInstance.subscribe(MBOT_TIMESYNC_CHANNEL, &MecanumDrive::handleTimesync, &controller);
     lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
 
     signal(SIGINT, exit);
 
     // controller.handleDrive(M_PI/4.0, 0.01);
-    controller.loadEquibTheta();
-
+   
     while (true) {
         lcmInstance.handleTimeout(UPDATERATE);
         controller.handleDrive();
