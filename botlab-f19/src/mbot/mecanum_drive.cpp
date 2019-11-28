@@ -30,11 +30,11 @@ using std::endl;
 #define MAXSPEED 1.0
 #define TESTSPEED
 
-#define KP 0.9f
-#define KI 0.0f
+#define KP 0.2f
+#define KI 0.08f
 #define KD 0.0f
 
-#define EQUIBANGLE 89.0f
+#define EQUIBANGLE 86.0f
 
 #define UPDATERATE 20
 #define DT 0.05f
@@ -65,10 +65,14 @@ public:
     }
 
     float update(float current_error) {
+        cout << "current error: " << current_error << endl;
+
         intergral += current_error * DT;
         float derivative = (current_error - previous_error) / DT;
+        cout << "derivative: " << derivative << endl;
         previous_error = current_error;
-        float control = -1.0 * (kp * current_error + ki * intergral + kd * derivative);
+        float control = -1.0 * ((current_error > 0 ? 1.0f : -1.0f) * kp * sqrt(fabs(current_error)) + ki * intergral + kd * derivative);
+        cout << "control: " << control << endl;
         cur_error = current_error;
         cur_control = control;
         return control;
@@ -96,7 +100,7 @@ private:
 
 class MecanumDrive {
 public:
-    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid(KP, KI, KD) {
+    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid(KP, KI, KD), equib_theta(90) {
         time_offset = 0;
         timesync_initialized_ = false;
 
@@ -122,10 +126,10 @@ public:
         float deltaV = (cmd.utime - curr_timestamp) / 1000000.0 * acceleration;
         curr_timestamp = cmd.utime;
         Vx = Vx + deltaV * std::cos(direction);
-        clamp = 0.5 / (std::max(0.5, abs(Vx)));
+        clamp = 0.5 / (std::max(0.5f, fabs(Vx)));
         Vx *= clamp;
         Vy = Vy + deltaV * std::sin(direction);
-        clamp = 0.5 / (std::max(0.5, abs(Vy)));
+        clamp = 0.5 / (std::max(0.5f, fabs(Vy)));
         Vy *= clamp;
         cout << "New velocity: " << Vx << ", " << Vy << endl;
 
@@ -157,46 +161,64 @@ public:
     }
 
     void handleIMU(const lcm::ReceiveBuffer* buf, const std::string& channel, const mbot_imu_t* imu_data) {
-        double accelerometerAngle = atan2f((float)imu_data->accel[1], (float)imu_data->accel[2]) * 180 / 3.1415;
-        double tbAngle = imu_data->tb_angles[0] * 180 / 3.1415;
-        if (abs(tbAngle) < 3) {
-            pendulum_theta = accelerometerAngle;
-        } else {
-            pendulum_theta = tbAngle;
-        }
+        // float accelerometerAngle = atan2f((float)imu_data->accel[1], (float)imu_data->accel[2]) * 180 / 3.1415;
+        // float tbAngle = imu_data->tb_angles[0] * 180 / 3.1415;
+        // if (fabs(tbAngle) < 3) {
+        //     pendulum_theta = accelerometerAngle;
+        // } else {
+        //     pendulum_theta = tbAngle;
+        // }
+        pendulum_theta = imu_data->tb_angles[0] * 180 / M_PI;
         printf("pendulum angle: %f\n", pendulum_theta);
     }
 /*
-    void handleVelocity(int64_t time, double theta, double v) {  // receive current v and dir from encoder
+    void handleVelocity(int64_t time, float theta, float v) {  // receive current v and dir from encoder
         curr_timestamp = time;
         last_dir = theta;
         last_velocity = v;
     }
 */
-    void handleDrive(/*double tar_dir, double tar_acc*/){
+    void handleDrive(/*float tar_dir, float tar_acc*/){
         direction = 0;
-        double error = EQUIBANGLE - pendulum_theta;
-        if (abs(error)<1.0){
-            error = 0.0;
-        }
+        float error = equib_theta - pendulum_theta;
+        // if (fabs(error)<0.2){
+        //     // error = 0.0;
+        //     pid.reset();
+        // }
         acceleration = pid.update(error);
+        if(acceleration > 0){
+            acceleration = std::max(acceleration, 0.2f);
+        }else{
+            acceleration = std::min(acceleration, -0.2f);
+        }
+        // if (fabs(acceleration) > 0.8) {
+        //     acceleration = 0;
+        //     pid.reset();
+        // }
+
         printf("new acceleration: %f\n", acceleration);
         // curr_timestamp = now();
     }
 
-private:
-    double direction; // see proposal for theta definition
-    double acceleration;
+    void loadEquibTheta(){
+        cout << "input equib angle: " << endl;
+        std::cin >> equib_theta;
+    }
 
-    double Vx;
-    double Vy;
+private:
+    float direction; // see proposal for theta definition
+    float acceleration;
+
+    float Vx;
+    float Vy;
 
     int64_t curr_timestamp;
-    double last_dir;
-    double last_velocity;
+    float last_dir;
+    float last_velocity;
 
-    double pendulum_theta;  // angle between pendulum and vertical line
-    double pendulum_alpha;  // falling direction of pendulum
+    float pendulum_theta;  // angle between pendulum and vertical line
+    float pendulum_alpha;  // falling direction of pendulum
+    float equib_theta;
 
     pid_controller pid;
 
@@ -222,6 +244,7 @@ int main(int argc, char** argv) {
     signal(SIGINT, exit);
 
     // controller.handleDrive(M_PI/4.0, 0.01);
+    controller.loadEquibTheta();
 
     while (true) {
         lcmInstance.handleTimeout(UPDATERATE);

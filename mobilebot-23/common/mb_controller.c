@@ -124,8 +124,8 @@ int mb_load_controller_config(){
 *
 *******************************************************************************/
 
-int mb_controller_update(mb_state_t* mb_state, mb_setpoints_t* mb_setpoints){
-
+int mb_controller_update(mb_state_t* mb_state, mb_setpoints_t* mb_setpoints) {
+    /*
     //set points for the fwd and turn velocities
     float fwd_sp, turn_sp, left_sp, right_sp;
 
@@ -149,22 +149,24 @@ int mb_controller_update(mb_state_t* mb_state, mb_setpoints_t* mb_setpoints){
     //convert forward/turn velocities to L/R wheel velocities
     left_sp = (fwd_sp - turn_sp * WHEEL_BASE/2.0);
     right_sp = (fwd_sp + turn_sp * WHEEL_BASE/2.0);
-    
-/*
+
+
     //inculdes motor model fit speed = 0.4*pwm + 0.02
     mb_state->left_cmd = (2.5*left_sp + 0.05) + rc_filter_march(&left_pid, left_sp - mb_state->left_velocity);
     mb_state->right_cmd =(2.5*right_sp + 0.05) + rc_filter_march(&right_pid, right_sp - mb_state->right_velocity);
-*/
+
     mb_state->left_cmd = rc_filter_march(&left_pid, left_sp - mb_state->left_velocity);
     mb_state->right_cmd = rc_filter_march(&right_pid, right_sp - mb_state->right_velocity);
 
     // set the set points to 0 if the command is 0
     if(left_sp == 0) mb_state->left_cmd = 0;
     if(right_sp == 0) mb_state->right_cmd = 0;
-    
+*/
+    mb_state->left_cmd = mb_setpoints->fwd_velocity;
+    mb_state->right_cmd = mb_setpoints->fwd_velocity;
+
     return 0;
 }
-
 
 /*******************************************************************************
 * int mb_destroy_controller()
