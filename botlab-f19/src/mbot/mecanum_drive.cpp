@@ -164,19 +164,6 @@ public:
         return cmd;
     }
 
-    mbot_motor_command_t updateCommand23(void) {
-        mbot_motor_command_t cmd;
-        cmd.utime = now();
-#ifdef TESTSPEED
-        cmd.trans_v = acceleration;
-#else
-        cmd.trans_v = Vx + Vy;
-#endif
-
-        cmd.angular_v = 0.0;
-        return cmd;
-    }
-
     bool timesync_initialized() { return timesync_initialized_; }
 
     void handleTimesync(const lcm::ReceiveBuffer* buf, const std::string& channel, const timestamp_t* timesync){
@@ -280,8 +267,6 @@ int main(int argc, char** argv) {
         if (controller.timesync_initialized()) {
             mbot_motor_command_t cmd14 = controller.updateCommand14();
             lcmInstance.publish(MBOT_MOTOR_COMMAND_CHANNEL_14, &cmd14);
-            mbot_motor_command_t cmd23 = controller.updateCommand23();
-            lcmInstance.publish(MBOT_MOTOR_COMMAND_CHANNEL_23, &cmd23);
         }
     }
 
