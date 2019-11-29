@@ -31,9 +31,9 @@ using std::endl;
 #define TESTSPEED
 
 #define KP 0.2f
-#define KI 0.2f
+#define KI 0.15f
 #define KD 0.005f
-#define KPV 0.5f
+#define KPV 2.25f
 
 #define EQUIBANGLE 86.0f
 
@@ -218,10 +218,10 @@ public:
         //     acceleration = std::min(acceleration, -0.1f);
         // }
 
-        if (fabs(acceleration) > 10.0) {
-            acceleration = 0;
-            // pid.reset();
-        }
+        // if (fabs(acceleration) > 10.0) {
+        //     acceleration = 0;
+        //     // pid.reset();
+        // }
 
         // printf("new acceleration: %f\n", acceleration);
         // curr_timestamp = now();
