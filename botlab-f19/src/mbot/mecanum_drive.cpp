@@ -31,13 +31,14 @@ using std::endl;
 #define TESTSPEED
 
 #define KP 0.2f
-#define KI 0.08f
-#define KD 0.0f
+#define KI 0.2f
+#define KD 0.005f
+#define KPV 0.5f
 
 #define EQUIBANGLE 86.0f
 
-#define UPDATERATE 20
-#define DT 0.05f
+#define UPDATETIME 50
+// #define DT 0.02f
 
 float clamp_speed(float speed)
 {
@@ -59,17 +60,33 @@ public:
         set_pid(p, i, d);
         intergral = 0.0f;
         previous_error = 0.0f;
-        // DT = 1.0f / (float)UPDATERATE;
+        // DT = 1.0f / (float)UPDATETIME;
         cur_error = 0.0f;
         cur_control = 0.0f;
+        isPrevErrorInitialize = false;
+        isPrevTimeInitialized = false;
     }
 
-    float update(float current_error) {
+    float update(float current_error, int64_t now) {
         cout << "current error: " << current_error << endl;
-
-        intergral += current_error * DT;
-        float derivative = (current_error - previous_error) / DT;
-        cout << "derivative: " << derivative << endl;
+        float derivative = 0.0f;
+        if (isPrevTimeInitialized) {
+            float dt = (float)(now - prev_time) / 1000000.0f;
+            cout << "delta t = " << dt << endl;
+            intergral += current_error * dt;
+            cout << "intergral: " << intergral << endl;
+            if (isPrevErrorInitialize) {
+                if (dt > 0.01){
+                    derivative = (current_error - previous_error) / dt;
+                }
+            } else {
+                isPrevErrorInitialize = true;
+            }
+            cout << "derivative: " << derivative << endl;
+        } else {
+            isPrevTimeInitialized = true;
+        }
+        prev_time = now;
         previous_error = current_error;
         float control = -1.0 * ((current_error > 0 ? 1.0f : -1.0f) * kp * sqrt(fabs(current_error)) + ki * intergral + kd * derivative);
         cout << "control: " << control << endl;
@@ -91,11 +108,15 @@ public:
 private:
     float intergral;
     float previous_error;
+    bool isPrevErrorInitialize;
 
     float cur_error;
     float cur_control;
 
     float kp, ki, kd;
+
+    int64_t prev_time;
+    bool isPrevTimeInitialized;
 };
 
 class MecanumDrive {
@@ -117,12 +138,14 @@ public:
         Vy = 0.0;
 
         curr_timestamp = now();
+        last_pwm = 0.0;
     }
 
     mbot_motor_command_t updateCommand14(void) {
         mbot_motor_command_t cmd;
-        float clamp;
         cmd.utime = now();
+#ifndef TESTSPEED
+        float clamp;
         float deltaV = (cmd.utime - curr_timestamp) / 1000000.0 * acceleration;
         curr_timestamp = cmd.utime;
         Vx = Vx + deltaV * std::cos(direction);
@@ -134,7 +157,7 @@ public:
         cout << "New velocity: " << Vx << ", " << Vy << endl;
 
         cmd.trans_v = Vx - Vy;
-#ifdef TESTSPEED
+#else
         cmd.trans_v = acceleration;
 #endif
         cmd.angular_v = 0.0;
@@ -144,9 +167,10 @@ public:
     mbot_motor_command_t updateCommand23(void) {
         mbot_motor_command_t cmd;
         cmd.utime = now();
-        cmd.trans_v = Vx + Vy;
 #ifdef TESTSPEED
         cmd.trans_v = acceleration;
+#else
+        cmd.trans_v = Vx + Vy;
 #endif
 
         cmd.angular_v = 0.0;
@@ -181,22 +205,25 @@ public:
     void handleDrive(/*float tar_dir, float tar_acc*/){
         direction = 0;
         float error = equib_theta - pendulum_theta;
-        // if (fabs(error)<0.2){
-        //     // error = 0.0;
-        //     pid.reset();
+        // if (fabs(error)<0.1){
+        //     error = 0.0;
+        //     // pid.reset();
         // }
-        acceleration = pid.update(error);
-        if(acceleration > 0){
-            acceleration = std::max(acceleration, 0.2f);
-        }else{
-            acceleration = std::min(acceleration, -0.2f);
-        }
-        // if (fabs(acceleration) > 0.8) {
-        //     acceleration = 0;
-        //     pid.reset();
+        error -= last_pwm * KPV;
+        acceleration = pid.update(error, now());
+        last_pwm = acceleration;
+        // if(acceleration > 0){
+        //     acceleration = std::max(acceleration, 0.1f);
+        // }else{
+        //     acceleration = std::min(acceleration, -0.1f);
         // }
 
-        printf("new acceleration: %f\n", acceleration);
+        if (fabs(acceleration) > 10.0) {
+            acceleration = 0;
+            // pid.reset();
+        }
+
+        // printf("new acceleration: %f\n", acceleration);
         // curr_timestamp = now();
     }
 
@@ -208,6 +235,7 @@ public:
 private:
     float direction; // see proposal for theta definition
     float acceleration;
+    float last_pwm;
 
     float Vx;
     float Vy;
@@ -247,7 +275,7 @@ int main(int argc, char** argv) {
     // controller.handleDrive(M_PI/4.0, 0.01);
    
     while (true) {
-        lcmInstance.handleTimeout(UPDATERATE);
+        lcmInstance.handleTimeout(UPDATETIME);
         controller.handleDrive();
         if (controller.timesync_initialized()) {
             mbot_motor_command_t cmd14 = controller.updateCommand14();
