@@ -7,6 +7,7 @@
 #include <lcmtypes/timestamp_t.hpp>
 #include <lcmtypes/message_received_t.hpp>
 #include <lcmtypes/mbot_imu_t.hpp>
+#include <lcmtypes/camera_pose_xy_t.hpp>
 #include <common/angle_functions.hpp>
 #include <common/pose_trace.hpp>
 #include <common/lcm_config.h>
@@ -30,9 +31,14 @@ using std::endl;
 #define MAXSPEED 1.0
 #define TESTSPEED
 
-#define KP 0.2f
-#define KI 0.15f
-#define KD 0.005f
+#define KP_x 0.2f
+#define KI_x 0.15f
+#define KD_x 0.005f
+
+#define KP_y 0.2f
+#define KI_y 0.15f
+#define KD_y 0.005f
+
 #define KPV 2.25f
 
 #define EQUIBANGLE 86.0f
@@ -121,7 +127,7 @@ private:
 
 class MecanumDrive {
 public:
-    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid(KP, KI, KD), equib_theta(90) {
+    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid_x(KP_x, KI_x, KD_x), pid_y(KP_y, KI_y, KD_y), equib_theta(90) {
         time_offset = 0;
         timesync_initialized_ = false;
 
@@ -144,22 +150,7 @@ public:
     mbot_motor_command_t updateCommand14(void) {
         mbot_motor_command_t cmd;
         cmd.utime = now();
-#ifndef TESTSPEED
-        float clamp;
-        float deltaV = (cmd.utime - curr_timestamp) / 1000000.0 * acceleration;
-        curr_timestamp = cmd.utime;
-        Vx = Vx + deltaV * std::cos(direction);
-        clamp = 0.5 / (std::max(0.5f, fabs(Vx)));
-        Vx *= clamp;
-        Vy = Vy + deltaV * std::sin(direction);
-        clamp = 0.5 / (std::max(0.5f, fabs(Vy)));
-        Vy *= clamp;
-        cout << "New velocity: " << Vx << ", " << Vy << endl;
-
         cmd.trans_v = Vx - Vy;
-#else
-        cmd.trans_v = acceleration;
-#endif
         cmd.angular_v = 0.0;
         return cmd;
     }
@@ -167,12 +158,7 @@ public:
     mbot_motor_command_t updateCommand23(void) {
         mbot_motor_command_t cmd;
         cmd.utime = now();
-#ifdef TESTSPEED
-        cmd.trans_v = acceleration;
-#else
         cmd.trans_v = Vx + Vy;
-#endif
-
         cmd.angular_v = 0.0;
         return cmd;
     }
@@ -202,37 +188,37 @@ public:
         last_velocity = v;
     }
 */
-    void handleDrive(/*float tar_dir, float tar_acc*/){
-        direction = 0;
-        float error = equib_theta - pendulum_theta;
-        // if (fabs(error)<0.1){
-        //     error = 0.0;
-        //     // pid.reset();
-        // }
-        error -= last_pwm * KPV;
-        acceleration = pid.update(error, now());
-        last_pwm = acceleration;
-        // if(acceleration > 0){
-        //     acceleration = std::max(acceleration, 0.1f);
-        // }else{
-        //     acceleration = std::min(acceleration, -0.1f);
-        // }
 
-        // if (fabs(acceleration) > 10.0) {
-        //     acceleration = 0;
-        //     // pid.reset();
-        // }
+    void handleCameraPose(const lcm::ReceiveBuffer* buf, const std::string& channel, const camera_pose_xy_t* camera_pose){
+   	camera_x = camera_pose->x;
+	camera_y = camera_pose->y;
+    }
 
-        // printf("new acceleration: %f\n", acceleration);
-        // curr_timestamp = now();
+    void handleDrive(/*float tar_dir, float tar_acc*/){ 
+      	float error_x = equib_x - camera_x;
+	//error -= last_pwm * KPV;
+        Vx = pid_x.update(error_x, now());
+        //last_pwm = acceleration;
+	float error_y = equib_y - camera_y;
+	Vy = pid_y.update(error_y, now());
     }
 
     void loadEquibTheta(){
         cout << "input equib angle: " << endl;
         std::cin >> equib_theta;
     }
+   
+    void loadEquibPose(){
+	cout << "inpute equib pose_x: " << endl;
+	std::cin >> equib_x;
+	cout << "inpute equib pose_y: " << endl;
+	std::cin >> equib_y;
+    }
 
 private:
+    message_received_t confirm;
+    lcm::LCM* lcmInstance;
+
     float direction; // see proposal for theta definition
     float acceleration;
     float last_pwm;
@@ -240,23 +226,28 @@ private:
     float Vx;
     float Vy;
 
+    float camera_x;
+    float camera_y;
+
     int64_t curr_timestamp;
     float last_dir;
     float last_velocity;
 
+    pid_controller pid_x;
+    pid_controller pid_y;
+
     float pendulum_theta;  // angle between pendulum and vertical line
     float pendulum_alpha;  // falling direction of pendulum
-    float equib_theta;
 
-    pid_controller pid;
+    float equib_theta;
+    float equib_x;
+    float equib_y;
 
     int64_t time_offset;
 
     bool timesync_initialized_;
 
-    message_received_t confirm;
-    lcm::LCM* lcmInstance;
-
+   
     int64_t now() {
         return utime_now() + time_offset;
     }
@@ -266,9 +257,10 @@ int main(int argc, char** argv) {
     lcm::LCM lcmInstance(MULTICAST_URL);
 
     MecanumDrive controller(&lcmInstance);
-    controller.loadEquibTheta();
+    controller.loadEquibPose();
     lcmInstance.subscribe(MBOT_TIMESYNC_CHANNEL, &MecanumDrive::handleTimesync, &controller);
     lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
+    lcmInstance.subscribe(CAMERA_POSE_CHANNEL, &MecanumDrive::handleCameraPose, &controller);
 
     signal(SIGINT, exit);
 
