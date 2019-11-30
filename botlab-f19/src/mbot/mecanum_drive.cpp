@@ -31,11 +31,11 @@ using std::endl;
 #define MAXSPEED 1.0
 #define TESTSPEED
 
-#define KP_x 0.2f
+#define KP_x 0.02f
 #define KI_x 0.0f //0.15f
 #define KD_x 0.0f //0.005f
 
-#define KP_y 0.2f
+#define KP_y 0.02f
 #define KI_y 0.0f //0.15f
 #define KD_y 0.0f //0.005f
 
