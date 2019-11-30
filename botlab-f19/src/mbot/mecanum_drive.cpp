@@ -32,14 +32,14 @@ using std::endl;
 #define TESTSPEED
 
 #define KP_x 0.02f
-#define KI_x 0.0f //0.15f
-#define KD_x 0.0f //0.005f
+#define KI_x 0.01f
+#define KD_x 0.0f
 
 #define KP_y 0.02f
-#define KI_y 0.0f //0.15f
-#define KD_y 0.0f //0.005f
+#define KI_y 0.01f
+#define KD_y 0.0f
 
-#define KPV 2.25f
+#define KPV 30.0f
 
 #define EQUIBANGLE 86.0f
 
@@ -190,18 +190,23 @@ public:
 */
 
     void handleCameraPose(const lcm::ReceiveBuffer* buf, const std::string& channel, const camera_pose_xy_t* camera_pose){
-   	camera_x = camera_pose->x;
-	camera_y = camera_pose->y;
-	cout << "camera_x: " << camera_x << "camera_y: " << camera_y << std::endl;
+        camera_x = camera_pose->x;
+        camera_y = camera_pose->y;
+        cout << "camera_x: " << camera_x << "   camera_y: " << camera_y << std::endl;
     }
 
-    void handleDrive(/*float tar_dir, float tar_acc*/){ 
-      	float error_x = equib_x - camera_x;
-	//error -= last_pwm * KPV;
+    void handleDrive(/*float tar_dir, float tar_acc*/){
+        // the x direction of car = y direction of camera !!!
+        float error_x = equib_y - camera_y;
+        error_x -= Vx * KPV;
         Vx = pid_x.update(error_x, now());
-        //last_pwm = acceleration;
-	float error_y = equib_y - camera_y;
-	Vy = pid_y.update(error_y, now());
+        float error_y = equib_x - camera_x;
+        error_y -= Vy * KPV;
+        Vy = pid_y.update(error_y, now());
+        if (fabs(Vx > 1.0f) || fabs(Vy > 1.0f)){
+            Vx = 0.0f;
+            Vy = 0.0f;
+        }
     }
 
     void loadEquibTheta(){
@@ -210,10 +215,10 @@ public:
     }
    
     void loadEquibPose(){
-	cout << "inpute equib pose_x: " << endl;
-	std::cin >> equib_x;
-	cout << "inpute equib pose_y: " << endl;
-	std::cin >> equib_y;
+        cout << "inpute equib pose_x: " << endl;
+        std::cin >> equib_x;
+        cout << "inpute equib pose_y: " << endl;
+        std::cin >> equib_y;
     }
 
 private:
@@ -260,12 +265,10 @@ int main(int argc, char** argv) {
     MecanumDrive controller(&lcmInstance);
     controller.loadEquibPose();
     lcmInstance.subscribe(MBOT_TIMESYNC_CHANNEL, &MecanumDrive::handleTimesync, &controller);
-    lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
+    // lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
     lcmInstance.subscribe(CAMERA_POSE_CHANNEL, &MecanumDrive::handleCameraPose, &controller);
 
     signal(SIGINT, exit);
-
-    // controller.handleDrive(M_PI/4.0, 0.01);
    
     while (true) {
         lcmInstance.handleTimeout(UPDATETIME);

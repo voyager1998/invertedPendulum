@@ -170,14 +170,8 @@ void publish_mb_msgs(){
         imu_msg.gyro[i] = mb_state.gyro[i];
     }
 
-    // accelerometerAngle = atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * 180 / 3.1415;
     tbAngle = mb_state.tb_angles[0] * 180 / PI;
-    printf("pendulum angle: %f\n", tbAngle);
-    // if (abs(tbAngle) < 3){
-    //     printf("pendulum angle: %f\n", accelerometerAngle);
-    // } else {
-    //     printf("pendulum angle: %f\n", tbAngle);
-    // }
+    // printf("pendulum angle: %f\n", tbAngle);
 
     odo_msg.utime = now;
     odo_msg.x = mb_odometry.x;
