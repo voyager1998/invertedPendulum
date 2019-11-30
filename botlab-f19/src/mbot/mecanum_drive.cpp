@@ -32,12 +32,12 @@ using std::endl;
 #define TESTSPEED
 
 #define KP_x 0.2f
-#define KI_x 0.15f
-#define KD_x 0.005f
+#define KI_x 0.0f //0.15f
+#define KD_x 0.0f //0.005f
 
 #define KP_y 0.2f
-#define KI_y 0.15f
-#define KD_y 0.005f
+#define KI_y 0.0f //0.15f
+#define KD_y 0.0f //0.005f
 
 #define KPV 2.25f
 
@@ -78,9 +78,9 @@ public:
         float derivative = 0.0f;
         if (isPrevTimeInitialized) {
             float dt = (float)(now - prev_time) / 1000000.0f;
-            cout << "delta t = " << dt << endl;
+            //cout << "delta t = " << dt << endl;
             intergral += current_error * dt;
-            cout << "intergral: " << intergral << endl;
+            //cout << "intergral: " << intergral << endl;
             if (isPrevErrorInitialize) {
                 if (dt > 0.01){
                     derivative = (current_error - previous_error) / dt;
@@ -88,7 +88,7 @@ public:
             } else {
                 isPrevErrorInitialize = true;
             }
-            cout << "derivative: " << derivative << endl;
+            //cout << "derivative: " << derivative << endl;
         } else {
             isPrevTimeInitialized = true;
         }
@@ -192,6 +192,7 @@ public:
     void handleCameraPose(const lcm::ReceiveBuffer* buf, const std::string& channel, const camera_pose_xy_t* camera_pose){
    	camera_x = camera_pose->x;
 	camera_y = camera_pose->y;
+	cout << "camera_x: " << camera_x << "camera_y: " << camera_y << std::endl;
     }
 
     void handleDrive(/*float tar_dir, float tar_acc*/){ 

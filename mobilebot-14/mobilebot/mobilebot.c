@@ -64,10 +64,10 @@ int main(){
     imu_config.dmp_interrupt_priority = CONTROLLER_PRIORITY;
 
 
-	//if(rc_mpu_initialize_dmp(&imu_data, imu_config)){
-	//	fprintf(stderr,"ERROR: can't talk to IMU! Exiting.\n");
-	//	return -1;
-	//}
+	if(rc_mpu_initialize_dmp(&imu_data, imu_config)){
+		fprintf(stderr,"ERROR: can't talk to IMU! Exiting.\n");
+		return -1;
+	}
 
 	//rc_nanosleep(5E9); // wait for imu to stabilize
 
