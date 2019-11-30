@@ -30,10 +30,10 @@ using std::endl;
 #define MAXSPEED 1.0
 #define TESTSPEED
 
-#define KP 0.2f
-#define KI 0.15f
-#define KD 0.005f
-#define KPV 2.25f
+#define KP 0.17f
+#define KI 0.2f
+#define KD 0.002f
+#define KPV 2.7f
 
 #define EQUIBANGLE 86.0f
 
