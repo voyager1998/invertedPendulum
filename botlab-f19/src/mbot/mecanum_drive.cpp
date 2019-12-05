@@ -46,6 +46,8 @@ using std::endl;
 #define UPDATETIME 50
 // #define DT 0.02f
 
+#define USEIMU
+
 float clamp_speed(float speed)
 {
     if(speed < -1.0f)
@@ -170,17 +172,6 @@ public:
         time_offset = timesync->utime - utime_now();
     }
 
-    void handleIMU(const lcm::ReceiveBuffer* buf, const std::string& channel, const mbot_imu_t* imu_data) {
-        // float accelerometerAngle = atan2f((float)imu_data->accel[1], (float)imu_data->accel[2]) * 180 / 3.1415;
-        // float tbAngle = imu_data->tb_angles[0] * 180 / 3.1415;
-        // if (fabs(tbAngle) < 3) {
-        //     pendulum_theta = accelerometerAngle;
-        // } else {
-        //     pendulum_theta = tbAngle;
-        // }
-        pendulum_theta = imu_data->tb_angles[0] * 180 / M_PI;
-        printf("pendulum angle: %f\n", pendulum_theta);
-    }
 /*
     void handleVelocity(int64_t time, float theta, float v) {  // receive current v and dir from encoder
         curr_timestamp = time;
@@ -188,6 +179,11 @@ public:
         last_velocity = v;
     }
 */
+
+    void handleIMU(const lcm::ReceiveBuffer* buf, const std::string& channel, const mbot_imu_t* imu_data) {
+        pendulum_theta = imu_data->tb_angles[0] * 180 / M_PI;
+        printf("pendulum angle: %f\n", pendulum_theta);
+    }
 
     void handleCameraPose(const lcm::ReceiveBuffer* buf, const std::string& channel, const camera_pose_xy_t* camera_pose){
         camera_x = camera_pose->x;
@@ -265,8 +261,11 @@ int main(int argc, char** argv) {
     MecanumDrive controller(&lcmInstance);
     controller.loadEquibPose();
     lcmInstance.subscribe(MBOT_TIMESYNC_CHANNEL, &MecanumDrive::handleTimesync, &controller);
-    // lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
+#ifdef USEIMU
+    lcmInstance.subscribe(PENDULUM_IMU_CHANNEL, &MecanumDrive::handleIMU, &controller);
+#else
     lcmInstance.subscribe(CAMERA_POSE_CHANNEL, &MecanumDrive::handleCameraPose, &controller);
+#endif
 
     signal(SIGINT, exit);
    

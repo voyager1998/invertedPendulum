@@ -171,7 +171,11 @@ void publish_mb_msgs(){
     }
 
     tbAngle = mb_state.tb_angles[0] * 180 / PI;
-    // printf("pendulum angle: %f\n", tbAngle);
+    printf("IMU angle 0: %f\n", tbAngle);
+    tbAngle = mb_state.tb_angles[1] * 180 / PI;
+    printf("IMU angle 1: %f\n", tbAngle);
+    tbAngle = mb_state.tb_angles[2] * 180 / PI;
+    printf("IMU angle 2: %f\n", tbAngle);
 
     odo_msg.utime = now;
     odo_msg.x = mb_odometry.x;

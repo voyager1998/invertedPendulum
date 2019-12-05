@@ -23,8 +23,6 @@ On Pi:
 
 `scp -r mobilebot-14 debian@192.168.4.2:~/`
 
-`scp mobilebot-f19/mobilebot/mobilebot.c debian@192.168.4.2:~/mobilebot-f19/mobilebot/`
-
 `scp mobilebot-14/mobilebot/mobilebot.c debian@192.168.4.2:~/mobilebot-14/mobilebot/`
 
 `scp mobilebot-23/mobilebot/mobilebot.c debian@192.168.7.2:~/mobilebot-23/mobilebot/`
