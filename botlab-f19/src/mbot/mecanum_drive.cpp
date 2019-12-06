@@ -46,7 +46,7 @@ using std::endl;
 #define UPDATETIME 50
 // #define DT 0.02f
 
-#define USEIMU
+// #define USEIMU
 
 float clamp_speed(float speed)
 {
@@ -129,7 +129,7 @@ private:
 
 class MecanumDrive {
 public:
-    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid_x(KP_x, KI_x, KD_x), pid_y(KP_y, KI_y, KD_y), equib_theta(90) {
+    MecanumDrive(lcm::LCM* instance) : lcmInstance(instance), pid_x(KP_x, KI_x, KD_x), pid_y(KP_y, KI_y, KD_y), equib_theta(90), frameID(0) {
         time_offset = 0;
         timesync_initialized_ = false;
 
@@ -188,6 +188,8 @@ public:
     void handleCameraPose(const lcm::ReceiveBuffer* buf, const std::string& channel, const camera_pose_xy_t* camera_pose){
         camera_x = camera_pose->x;
         camera_y = camera_pose->y;
+        cout << "frame " << frameID <<endl;
+        frameID++;
         cout << "camera_x: " << camera_x << "   camera_y: " << camera_y << std::endl;
     }
 
@@ -228,6 +230,7 @@ private:
     float Vx;
     float Vy;
 
+    int frameID;
     float camera_x;
     float camera_y;
 
