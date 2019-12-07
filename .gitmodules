@@ -1,3 +1,4 @@
 [submodule "eecs467-Finalproject-Perception"]
 	path = eecs467-Finalproject-Perception
 	url = https://github.com/VentusYue/eecs467-Finalproject-Perception.git
+	branch = master

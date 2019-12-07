@@ -31,12 +31,12 @@ using std::endl;
 #define MAXSPEED 1.0
 #define TESTSPEED
 
-#define KP_x 0.02f
-#define KI_x 0.01f
+#define KP_x 0.04f
+#define KI_x 0.0f
 #define KD_x 0.0f
 
-#define KP_y 0.02f
-#define KI_y 0.01f
+#define KP_y 0.04f
+#define KI_y 0.0f
 #define KD_y 0.0f
 
 #define KPV 30.0f
@@ -188,23 +188,28 @@ public:
     void handleCameraPose(const lcm::ReceiveBuffer* buf, const std::string& channel, const camera_pose_xy_t* camera_pose){
         camera_x = camera_pose->x;
         camera_y = camera_pose->y;
-        cout << "frame " << frameID <<endl;
-        frameID++;
+        // cout << "frame " << frameID <<endl;
+        // frameID++;
         cout << "camera_x: " << camera_x << "   camera_y: " << camera_y << std::endl;
     }
 
     void handleDrive(/*float tar_dir, float tar_acc*/){
         // the x direction of car = y direction of camera !!!
-        float error_x = equib_y - camera_y;
-        error_x -= Vx * KPV;
-        Vx = pid_x.update(error_x, now());
-        float error_y = equib_x - camera_x;
-        error_y -= Vy * KPV;
-        Vy = pid_y.update(error_y, now());
-        if (fabs(Vx > 1.0f) || fabs(Vy > 1.0f)){
+        if (camera_x == -1 || camera_y == -1){
             Vx = 0.0f;
             Vy = 0.0f;
+        }else{
+            float error_x = equib_y - camera_y;
+            error_x -= Vx * KPV;
+            Vx = pid_x.update(error_x, now());
+            float error_y = equib_x - camera_x;
+            error_y -= Vy * KPV;
+            Vy = pid_y.update(error_y, now());
         }
+        // if (fabs(Vx > 1.0f) || fabs(Vy > 1.0f)){
+        //     Vx = 0.0f;
+        //     Vy = 0.0f;
+        // }
     }
 
     void loadEquibTheta(){
