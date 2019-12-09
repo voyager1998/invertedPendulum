@@ -12,9 +12,9 @@
 #define DONT_PRINT_ODOMETRY
 #define PI 3.14159265359
 
-#define P 0.45f
-#define I 1.00f
-#define D 0.0105f
+#define P 0.2f
+#define I 0.90f
+#define D 0.011f
 
 // cmd = P_cmd * sqrt(cmd)
 #define P_cmd 0.78f
@@ -22,7 +22,9 @@
 // if abs(error < Ignore_cmd_threshold) cmd = 0.0f
 #define Ignore_cmd_threshold 0.12
 
-#define PWMGain 0.2f
+#define PWMGain 0.6f
+#define PWM_I_Gain 0.1f
+#define ODOGain 0.1f
 
 float pre_error = 0.0f;
 float pre_cmd = 0.0f;
@@ -34,6 +36,8 @@ int pre_time_initialized = 0;
 
 int set_equilibrium_angle = 0;
 float equilibrium_angle;
+
+float pwm_int = 0.0f;
 
 /*******************************************************************************
 * int main() 
@@ -261,21 +265,22 @@ void mobilebot_controller() {
         double Angle1 = atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * RAD_TO_DEG - 90.0f;
 
         // double Angle1 = mb_state.tb_angles[0] * RAD_TO_DEG;
+        // printf("pendulumT = %f		odometry  = %f\n", Angle0, mb_odometry.x);
         printf("pendulumT = %f\n", Angle0);
         // printf("Accel 	  = %f\n", Angle1);
         // printf("Gyro 	  = %f\n", imu_data.gyro[0]);
 
         if (set_equilibrium_angle) {
-            cur_error_angle_only = equilibrium_angle - Angle0;
-
-            cur_error = cur_error_angle_only - PWMGain * pre_cmd;
-
             if (pre_time_initialized)
                 dt = (now - pre_time) / (1E6);
             else {
                 dt = 0.01f;
                 pre_time_initialized = 1;
             }
+
+            cur_error_angle_only = equilibrium_angle - Angle0;
+            pwm_int += pre_cmd * dt;
+            cur_error = cur_error_angle_only - PWMGain * pre_cmd - PWM_I_Gain * pwm_int;
 
             float der = (cur_error - pre_error) / dt;
             integral += cur_error * dt;
@@ -285,21 +290,26 @@ void mobilebot_controller() {
             float abs_error_angle_only = fabsf(cur_error_angle_only);
             if (abs_error_angle_only < Ignore_cmd_threshold)
                 cmd = 0.0f;
+
+            printf("integral = %f\n", integral);
+
             /*
-	     If the error is large, just set a large PWM
-	     Not working! 
-	    if(abs_error_angle_only > 0.65f)
-	    {
-		float abs_cmd = (fabsf(cmd) > 0.65 ? fabsf(cmd) : 0.8f);
-	        cmd = (cmd > 0.0f ? 1.0f * abs_cmd : -1.0f * abs_cmd);
-	    }
-	    */
+			If the error is large, just set a large PWM
+			Not working! 
+	     	Not working! 
+			Not working! 
+			if(abs_error_angle_only > 0.65f)
+			{
+			float abs_cmd = (fabsf(cmd) > 0.65 ? fabsf(cmd) : 0.8f);
+				cmd = (cmd > 0.0f ? 1.0f * abs_cmd : -1.0f * abs_cmd);
+			}
+			*/
             // printf("      now = %llu\n", now);
 
-            printf("P * error = %f\n", -P * cur_error);
-            printf("I * integ = %f\n", -I * cur_error * dt);
-            printf("D * deriv = %f\n", -D * der);
-            printf("       dt = %f\n", dt);
+            // printf("P * error = %f\n", -P * cur_error);
+            // printf("I * integ = %f\n", -I * cur_error * dt);
+            // printf("D * deriv = %f\n", -D * der);
+            // printf("       dt = %f\n", dt);
             pre_error = cur_error;
             pre_cmd = cmd;
             pre_time = now;
