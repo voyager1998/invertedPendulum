@@ -6,11 +6,14 @@
 *******************************************************************************/
 #include "mobilebot.h"
 
+// #define CALIBRATE_GYRO
+#define I2C_BUS 2
+
 #define DONT_PRINT_ODOMETRY
 #define PI 3.14159265359
 
 #define P 0.45f
-#define I 0.0f
+#define I 1.00f
 #define D 0.0105f
 
 // cmd = P_cmd * sqrt(cmd)
@@ -19,7 +22,7 @@
 // if abs(error < Ignore_cmd_threshold) cmd = 0.0f
 #define Ignore_cmd_threshold 0.12
 
-#define PWMGain 0.00f
+#define PWMGain 0.2f
 
 float pre_error = 0.0f;
 float pre_cmd = 0.0f;
@@ -37,6 +40,23 @@ float equilibrium_angle;
 *
 *******************************************************************************/
 int main() {
+#ifdef CALIBRATE_GYRO
+    // Calibrate the IMU
+    printf("\nThis program will generate a new gyro calibration file\n");
+    printf("keep your board very still for this procedure.\n");
+    printf("Press any key to continue\n");
+    getchar();
+    printf("Starting calibration routine\n");
+    rc_mpu_config_t config = rc_mpu_default_config();
+    config.i2c_bus = I2C_BUS;
+    if (rc_mpu_calibrate_gyro_routine(config) < 0) {
+        printf("Failed to complete gyro calibration\n");
+        return -1;
+    }
+    printf("\ngyro calibration file written\n");
+    printf("run rc_test_mpu to check performance\n");
+#endif
+
     rc_led_set(RC_LED_GREEN, LED_OFF);
     rc_led_set(RC_LED_RED, LED_ON);
     //set cpu freq to max performance
@@ -84,6 +104,9 @@ int main() {
     imu_config.dmp_fetch_accel_gyro = 1;
     imu_config.dmp_interrupt_sched_policy = SCHED_FIFO;
     imu_config.dmp_interrupt_priority = CONTROLLER_PRIORITY;
+    // imu_config.dmp_auto_calibrate_gyro = 1;
+    // imu_config.enable_magnetometer = 1;
+
 
     if (rc_mpu_initialize_dmp(&imu_data, imu_config)) {
         fprintf(stderr, "ERROR: can't talk to IMU! Exiting.\n");
@@ -234,10 +257,14 @@ void mobilebot_controller() {
         // printf("not manual ctl\n");
         float cmd, cur_error, cur_error_angle_only, dt;
         double Angle0 = imu_data.dmp_TaitBryan[TB_PITCH_X] * RAD_TO_DEG;
-        // double Angle0 = atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * RAD_TO_DEG;
+        // double Angle0 = imu_data.fused_TaitBryan[TB_PITCH_X] * RAD_TO_DEG;
+        double Angle1 = atan2f((float)mb_state.accel[1], (float)mb_state.accel[2]) * RAD_TO_DEG - 90.0f;
+
         // double Angle1 = mb_state.tb_angles[0] * RAD_TO_DEG;
         printf("pendulumT = %f\n", Angle0);
-        // printf("pendulumT = %f\n", Angle1);
+        // printf("Accel 	  = %f\n", Angle1);
+        // printf("Gyro 	  = %f\n", imu_data.gyro[0]);
+
         if (set_equilibrium_angle) {
             cur_error_angle_only = equilibrium_angle - Angle0;
 
@@ -269,10 +296,10 @@ void mobilebot_controller() {
 	    */
             // printf("      now = %llu\n", now);
 
-            // printf("P * error = %f\n", -P * cur_error);
-            // printf("I * integ = %f\n", -I * cur_error * dt);
-            // printf("D * deriv = %f\n", -D * der);
-            // printf("       dt = %f\n", dt);
+            printf("P * error = %f\n", -P * cur_error);
+            printf("I * integ = %f\n", -I * cur_error * dt);
+            printf("D * deriv = %f\n", -D * der);
+            printf("       dt = %f\n", dt);
             pre_error = cur_error;
             pre_cmd = cmd;
             pre_time = now;
