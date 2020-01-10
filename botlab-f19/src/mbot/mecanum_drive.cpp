@@ -31,20 +31,21 @@ using std::endl;
 #define MAXSPEED 1.0
 #define TESTSPEED
 
-#define KP_x 0.04f
+#define KP_x 0.05f
 #define KI_x 0.0f
-#define KD_x 0.0f
+#define KD_x 0.00f
 
-#define KP_y 0.04f
-#define KI_y 0.0f
-#define KD_y 0.0f
+#define KP_y 0.05f
+#define KI_y 0.00f
+#define KD_y 0.00f
 
-#define KPV 30.0f
+#define KPV 0.0f
 
 #define EQUIBANGLE 86.0f
 
 #define UPDATETIME 50
-// #define DT 0.02f
+
+// #define RECALIBRATE
 
 // #define USEIMU
 
@@ -75,14 +76,18 @@ public:
         isPrevTimeInitialized = false;
     }
 
-    float update(float current_error, int64_t now) {
-        cout << "current error: " << current_error << endl;
+    float update(float current_error, int64_t now, bool print_option = true) {
+        if (print_option){
+            cout << "current error: " << current_error << endl;
+        }
         float derivative = 0.0f;
         if (isPrevTimeInitialized) {
             float dt = (float)(now - prev_time) / 1000000.0f;
             //cout << "delta t = " << dt << endl;
             intergral += current_error * dt;
-            //cout << "intergral: " << intergral << endl;
+            if(print_option){
+                cout << "intergral: " << KI_x * intergral << endl;
+            }
             if (isPrevErrorInitialize) {
                 if (dt > 0.01){
                     derivative = (current_error - previous_error) / dt;
@@ -90,14 +95,18 @@ public:
             } else {
                 isPrevErrorInitialize = true;
             }
-            //cout << "derivative: " << derivative << endl;
+            if (print_option) {
+                cout << "derivative: " << KD_x * derivative << endl;
+            }
         } else {
             isPrevTimeInitialized = true;
         }
         prev_time = now;
         previous_error = current_error;
         float control = -1.0 * ((current_error > 0 ? 1.0f : -1.0f) * kp * sqrt(fabs(current_error)) + ki * intergral + kd * derivative);
-        cout << "control: " << control << endl;
+        if (print_option) {
+            cout << "control: " << control << endl;
+        }
         cur_error = current_error;
         cur_control = control;
         return control;
@@ -204,7 +213,7 @@ public:
             Vx = pid_x.update(error_x, now());
             float error_y = equib_x - camera_x;
             error_y -= Vy * KPV;
-            Vy = pid_y.update(error_y, now());
+            Vy = pid_y.update(error_y, now(), false);
         }
         // if (fabs(Vx > 1.0f) || fabs(Vy > 1.0f)){
         //     Vx = 0.0f;
@@ -218,10 +227,15 @@ public:
     }
    
     void loadEquibPose(){
+#ifdef RECALIBRATE
         cout << "inpute equib pose_x: " << endl;
         std::cin >> equib_x;
         cout << "inpute equib pose_y: " << endl;
         std::cin >> equib_y;
+#else
+        equib_x = 320.0f;
+        equib_y = 215.0f;
+#endif
     }
 
 private:
