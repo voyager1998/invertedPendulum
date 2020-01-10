@@ -1,0 +1,6 @@
+struct equilibrium_angle_t
+{
+    int64_t utime;
+    float equilibrium_angle;
+    int64_t set_equilibrium;
+}
