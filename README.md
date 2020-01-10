@@ -1,3 +1,7 @@
+# Driving Inverted Pendulum
+
+To watch the demo videos and our report, refer to [link](https://voyager1998.github.io/2019/11/20/InvPendulum/).
+
 # Controller for a Mobile Robot with 4 Mecanum Wheels
 
 ## Set up bot-lcm-tunnel
